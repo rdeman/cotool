@@ -10,8 +10,8 @@ colonne_premiere_balise=7
 teamFileName = 'Inscrits2012.csv'
 
 // balises et penalités
-penalite1 = new TimeDuration(0, 30, 0, 0)
-penalite2 = new TimeDuration(0, 40, 0, 0)
+penalite1 = new Penalite("0:30:00")
+penalite2 = new Penalite("00:40:00")
 epreuves=[CO:'imposé',VTT:'libre']
 balises=[:]
 balises['CO']=[1:penalite1,2:penalite1,3:penalite1,4:penalite1,5:penalite2]

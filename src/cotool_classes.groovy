@@ -18,7 +18,7 @@ class Penalite
 class Team {
     def dossard
     def puce
-    def classment
+    def classement
     def nom
     def equipier1
     def equipier2
@@ -158,50 +158,48 @@ results.each { result ->
             }
             else
             {
-                def index_epreuve = 0
-                def checkpoints = [:]
-                def firstIndex = colonne_premiere_balise-1
-                def index_balise=1
-                def numeroPrecedent = 0
-                def tmpStack = []
-                (firstIndex..fields.size()).step(2) { index ->
-                    def numero = fields[index]
-                    def temps = fields[index+1]
-                    def epreuve = (epreuves.keySet() as List)[index_epreuve]
-                    def checkpt_id = epreuve+"-"+numero
-                    def deja_pointe = (checkpoints[checkpt_id]!=null)
-                    if (epreuves[epreuve]=="imposé")
-                    {
-                        if ((numero!=null) && (numero<numeroPrecedent) && !deja_pointe)
-                        {
-                            while (true)
-                            {
-                                def pop = tmpStack.pop()
-                                checkpoints[epreuve+"-"+pop]=null
-                                if (tmpStack[-1]<=numero) break
-                            }
-                        }
-                        if (!deja_pointe)
-                        {
-                            checkpoints[checkpt_id]=new Checkpoint(ordrePassage:index_balise, time:toTime(temps))
-                        }
-                        tmpStack << numero
-                        index_balise++
-                        numeroPrecedent=numero
-                    }
-                    else
-                    {
-                        checkpoints[checkpt_id]=new Checkpoint(time:toTime(temps))
-                    }
-                    if ((index_epreuve<epreuves.size()-1) && ("$numero" == "${dernieres_balises[epreuve]}"))
-                    {
-                        index_epreuve++
-                    }
-                }
-                results << new Result(puce:fields[1], ordreArrivee:fields[0], depart:toTime(fields[3]), arrivee:toTime(fields[4]), poincons:fields[5], checkpoints:checkpoints)
+                Result result = readResultLine(fields)
+                results << result
             }
         }
         return results
+    }
+
+    Result readResultLine(fields) {
+        def index_epreuve = 0
+        def checkpoints = [:]
+        def firstIndex = colonne_premiere_balise - 1
+        def index_balise = 1
+        def numeroPrecedent = 0
+        def tmpStack = []
+        (firstIndex..fields.size()).step(2) { index ->
+            def numero = fields[index]
+            def temps = fields[index + 1]
+            def epreuve = (epreuves.keySet() as List)[index_epreuve]
+            def checkpt_id = epreuve + "-" + numero
+            def deja_pointe = (checkpoints[checkpt_id] != null)
+            if (epreuves[epreuve] == "imposé") {
+                if ((numero != null) && (numero < numeroPrecedent) && !deja_pointe) {
+                    while (true) {
+                        def pop = tmpStack.pop()
+                        checkpoints[epreuve + "-" + pop] = null
+                        if (tmpStack[-1] <= numero) break
+                    }
+                }
+                if (!deja_pointe) {
+                    checkpoints[checkpt_id] = new Checkpoint(ordrePassage: index_balise, time: toTime(temps))
+                }
+                tmpStack << numero
+                index_balise++
+                numeroPrecedent = numero
+            } else {
+                checkpoints[checkpt_id] = new Checkpoint(time: toTime(temps))
+            }
+            if ((index_epreuve < epreuves.size() - 1) && ("$numero" == "${dernieres_balises[epreuve]}")) {
+                index_epreuve++
+            }
+        }
+        new Result(puce: fields[1], ordreArrivee: fields[0], depart: toTime(fields[3]), arrivee: toTime(fields[4]), poincons: fields[5], checkpoints: checkpoints)
     }
 
 // lecture fichier equipes
@@ -235,7 +233,7 @@ results.each { result ->
                 {
                     result.checkpoints[balise_id]=""
                     result.missed[balise.epreuve] << balise.numero
-                    penalty = penalty+balise.penalite
+                    penalty = penalty+balise.penalite.duration
                 }
             }
             result.penalite =  penalty
@@ -261,10 +259,27 @@ results.each { result ->
     {
         // ---------------- Initialisations
         initBalises()
-        println "ordre_balises=" + ordre_balises
+        println "Balises et pénalités : "
+        balises.each { epreuve, balises_epreuve ->
+            print (" . " + epreuve + " (ordre " + epreuves[epreuve] + ") : ")
+            def first = true
+            balises_epreuve.each { numero, penalite ->
+                if (!first)
+                {
+                    print " , "
+                }
+                else
+                {
+                    first = false
+                }
+                print (numero + " (penalité:"+penalite.duration+")")
+            }
+            println()
+        }
 
         // ---------------- lecture des fichiers
         // fichier résultats
+        println "------------------------------"
         results = readResultFile()
 
         // fichier equipes
@@ -279,7 +294,8 @@ results.each { result ->
         // ecriture fichier résultats
         writeResultFile(results, teams)
 
-        println "===> "+resultFilePath
+        println "------------------------------"
+        println "Fichier résultat : "+resultFilePath
     }
 
 }

@@ -104,7 +104,10 @@ balises.each
 {
 %>${it.numero};<%
 }
-%>CO;VTT
+epreuves.each { epreuve, type_epreuve ->
+%>${epreuve};<%
+}
+%>
 <%
 count=1
 results.each { result ->
@@ -115,7 +118,9 @@ results.each { result ->
         t = result.checkpoints[checkptnbr]
 %>$t;<%
     }
-%>${result.missed['CO'].size};${result.missed['VTT'].size}<%
+result.missed.each { epreuve, balises ->
+%>${balises.size};<%
+}
 %>
 <%
 }
@@ -220,10 +225,20 @@ results.each { result ->
         return teams
     }
 
+    def mapEpreuves()
+    {
+        def listeEpreuves = epreuves.keySet() as List
+        def mapEpreuves = [:]
+        listeEpreuves.each { epreuve ->
+            mapEpreuves[epreuve]=[]
+        }
+        mapEpreuves
+    }
+
     def calculPenalites()
     {
         results.each { result ->
-            result.missed = ['CO':[],'VTT':[]] // balises manquées
+            result.missed = mapEpreuves() // balises manquées
             def penalty = new TimeDuration(0, 0, 0, 0, 0) // initialisation penalités
 
             // verification passage checkpoints
@@ -244,7 +259,7 @@ results.each { result ->
     }
 
     def writeResultFile(ArrayList results, LinkedHashMap teams) {
-        def binding = ["balises": liste_balises, "results": results, "teams": teams]
+        def binding = ["epreuves":epreuves, "balises": liste_balises, "results": results, "teams": teams]
         def engine = new SimpleTemplateEngine()
         def res = engine.createTemplate(template).make(binding)
 
@@ -257,9 +272,15 @@ results.each { result ->
 
     def traitement()
     {
+        println "--------------- Fichiers ------------------"
+        println ("Fichier equipes : " + teamFilePath)
+        println ("Fichier résultats : " + inputFilePath)
+        println()
+
         // ---------------- Initialisations
         initBalises()
-        println "Balises et pénalités : "
+
+        println "--------------- Balises et pénalités ------------------"
         balises.each { epreuve, balises_epreuve ->
             print (" . " + epreuve + " (ordre " + epreuves[epreuve] + ") : ")
             def first = true
@@ -276,10 +297,11 @@ results.each { result ->
             }
             println()
         }
+        println()
 
         // ---------------- lecture des fichiers
         // fichier résultats
-        println "------------------------------"
+        println "--------------- Résultats ------------------"
         results = readResultFile()
 
         // fichier equipes
@@ -293,9 +315,10 @@ results.each { result ->
 
         // ecriture fichier résultats
         writeResultFile(results, teams)
+        println()
 
-        println "------------------------------"
-        println "Fichier résultat : "+resultFilePath
+        println "--------------- Fichier résultat ------------------"
+        println "=> " + resultFilePath
     }
 
 }
